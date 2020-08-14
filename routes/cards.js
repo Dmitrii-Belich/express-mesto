@@ -1,8 +1,20 @@
-const router = require('express').Router(); // создали роутер
-const cards = require('../data/cards.json'); // данные нужны для роутинга, поэтому импортируем их
+const router = require('express').Router();
+const path = require('path');
+const fs = require('fs');
 
 router.get('/', (req, res) => {
-  res.send(cards);
+  fs.readFile(path.join(__dirname, '..', 'data/cards.json'), (err, data) => {
+    if (err) {
+      res.status(500).send({ message: err.message });
+      return;
+    }
+    try {
+      const cards = JSON.parse(data);
+      res.send(JSON.parse(cards));
+    } catch (parseErr) {
+      res.status(500).send({ message: parseErr.message });
+    }
+  });
 });
 
 module.exports = router;
