@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
     }
     try {
       const cards = JSON.parse(data);
-      res.send(JSON.parse(cards));
+      res.send(cards);
     } catch (parseErr) {
       res.status(500).send({ message: parseErr.message });
     }
