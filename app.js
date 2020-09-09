@@ -10,16 +10,16 @@ const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use((req, res, next) => {
-  req.user = {
-    _id: '5f589e926afbd92968931699',
-  };
-  next();
-});
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
   useCreateIndex: true,
   useFindAndModify: false,
+});
+app.use((req, res, next) => {
+  req.user = {
+    _id: '5f589e7e6afbd92968931697',
+  };
+  next();
 });
 app.use('/cards', cards);
 app.use('/users', users);
