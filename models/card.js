@@ -7,6 +7,7 @@ const cardSchema = new mongoose.Schema({
     minlength: 2,
     maxlength: 30,
   },
+
   link: {
     type: String,
     required: true,
@@ -17,16 +18,19 @@ const cardSchema = new mongoose.Schema({
       message: 'Указана некорректная ссылка',
     },
   },
+
   owner: {
     type: mongoose.Types.ObjectId,
     required: true,
     ref: 'user',
   },
+
   likes: [{
     type: mongoose.Types.ObjectId,
     ref: 'user',
     default: [],
   }],
+
   createdAt: {
     type: Date,
     default: Date.now(),
