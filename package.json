@@ -6,21 +6,21 @@
   "scripts": {
     "start": "better-npm-run start",
     "dev": "better-npm-run dev"
-
   },
   "betterScripts": {
-    "start": {"command" : "node app.js",
+    "start": {
+      "command": "node app.js",
       "env": {
         "PORT": "3000",
         "NODE_ENV": "production"
       }
     },
-    "dev": {"command" : "nodemon app.js",
+    "dev": {
+      "command": "nodemon app.js",
       "env": {
         "PORT": "3000"
       }
     }
-
   },
   "repository": {
     "type": "git",
@@ -35,7 +35,9 @@
   "homepage": "https://github.com/Dmitrii-Belich/express-mesto#readme",
   "dependencies": {
     "better-npm-run": "^0.1.1",
-    "express": "^4.17.1"
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.10.3"
   },
   "devDependencies": {
     "eslint": "^7.6.0",
