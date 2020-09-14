@@ -1,13 +1,19 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const rateLimit = require('express-rate-limit');
 
 const cards = require('./routes/cards');
 const users = require('./routes/users');
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+
 const { PORT = 3000 } = process.env;
 const app = express();
-
+app.use(limiter);
 app.use(bodyParser.json());
 
 app.use(bodyParser.urlencoded({ extended: true }));
