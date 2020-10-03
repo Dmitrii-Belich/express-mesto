@@ -2,9 +2,19 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const rateLimit = require('express-rate-limit');
+const cors = require('cors');
+require('dotenv').config();
+const { celebrate, Joi, errors } = require('celebrate');
+const auth = require('./middlewares/auth');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const cards = require('./routes/cards');
 const users = require('./routes/users');
+const {
+  createUser,
+  login,
+} = require('./controllers/user');
+const CustomError = require('./utils/utils');
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -13,6 +23,7 @@ const limiter = rateLimit({
 
 const { PORT = 3000 } = process.env;
 const app = express();
+app.use(cors());
 app.use(limiter);
 app.use(bodyParser.json());
 
@@ -24,19 +35,51 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useFindAndModify: false,
 });
 
+app.use(requestLogger);
+
+app.post('/signin', celebrate({
+  body: Joi.object().keys({
+    password: Joi.string().required().min(3),
+    email: Joi.string().required().min(3),
+  }),
+}), login);
+
+app.post('/signup', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().min(3),
+    password: Joi.string().required().min(3),
+  }),
+}), createUser);
+
+app.use('/cards', celebrate({
+  headers: Joi.object().keys({
+    authorization: Joi.string().required(),
+  }).unknown(true),
+}), auth, cards);
+
+app.use('/users', celebrate({
+  headers: Joi.object().keys({
+    authorization: Joi.string().required(),
+  }).unknown(true),
+}), auth, users);
+
 app.use((req, res, next) => {
-  req.user = {
-    _id: '5f589e7e6afbd92968931697',
-  };
-  next();
+  next(new CustomError(404, 'Запрашиваемый ресурс не найден'));
 });
 
-app.use('/cards', cards);
+app.use(errorLogger);
 
-app.use('/users', users);
+app.use(errors());
 
-app.use((req, res) => {
-  res.status(404).send({ message: 'Запрашиваемый ресурс не найден' });
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  const { statusCode = 500, message } = err;
+  res
+    .status(statusCode)
+    .send({
+      message: !message
+        ? 'На сервере произошла ошибка' : message,
+    });
 });
 
 app.listen(PORT, () => {

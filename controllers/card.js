@@ -1,80 +1,53 @@
 const Card = require('../models/card');
-const { ERROR_CODES, DataBaseError } = require('../utils/utils');
+const CustomError = require('../utils/utils');
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({}).populate(['owner', 'likes'])
-    .then((Cards) => res.status(200).send(Cards))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .then((Cards) => res.status(200).send(Cards.sort((a, b) => b.createdAt - a.createdAt)))
+    .catch(next);
 };
 
-module.exports.deleteCard = (req, res) => {
-  Card.findOneAndDelete({ _id: req.params.id })
-    .populate(['owner', 'likes'])
-    .orFail(new DataBaseError(ERROR_CODES.IdError.message, ERROR_CODES.IdError.name))
+module.exports.deleteCard = (req, res, next) => {
+  Card.findById(req.params.id)
+    .orFail(new CustomError(404, 'Данного id нет в базе'))
     .then((card) => {
-      res.status(200).send(card);
-    })
-    .catch((err) => {
-      if (err.name === ERROR_CODES.IdError.name) {
-        res.status(ERROR_CODES.IdError.code).send({ message: ERROR_CODES.IdError.message });
-        return;
+      if (card.owner.toString() === req.user._id.toString()) {
+        Card.findOneAndDelete({ _id: card._id })
+          .populate(['owner', 'likes'])
+          .orFail(new CustomError(404, 'Данного id нет в базе'))
+          .then((deletedCard) => {
+            res.status(200).send(deletedCard);
+          });
       }
-      if (err.name === ERROR_CODES.CastError.name) {
-        res.status(ERROR_CODES.CastError.code).send({ message: ERROR_CODES.CastError.message });
-        return;
-      }
-      res.status(500).send({ message: err.message });
-    });
+    }).catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
-  Card.create({ name, link, owner: req.user._id }).populate(['owner'])
-    .then((card) => res.status(200).send(card))
-    .catch((err) => {
-      if (err.name === ERROR_CODES.ValidationError.name) {
-        res.status(ERROR_CODES.ValidationError.code)
-          .send({ message: ERROR_CODES.ValidationError.message });
-        return;
-      }
-      res.status(500).send({ message: err.message });
-    });
+  Card.create({ name, link, owner: req.user._id })
+    .then((card) => {
+      Card.findById(card._id).populate(['owner'])
+        .orFail(new CustomError(404, 'Данного id нет в базе'))
+        .then((createdCard) => {
+          res.status(200).send(createdCard);
+        });
+    }).catch((err) => next(new CustomError(400, err.message)));
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findOneAndUpdate({ _id: req.params.cardId },
     { $addToSet: { likes: req.user._id } },
     { new: true }).populate(['owner', 'likes'])
-    .orFail(new DataBaseError(ERROR_CODES.IdError.message, ERROR_CODES.IdError.name))
+    .orFail(new CustomError(404, 'Данного id нет в базе'))
     .then((card) => res.status(200).send(card))
-    .catch((err) => {
-      if (err.name === ERROR_CODES.IdError.name) {
-        res.status(ERROR_CODES.IdError.code).send({ message: ERROR_CODES.IdError.message });
-        return;
-      }
-      if (err.name === ERROR_CODES.CastError.name) {
-        res.status(ERROR_CODES.CastError.code).send({ message: ERROR_CODES.CastError.message });
-        return;
-      }
-      res.status(500).send({ message: err.message });
-    });
+    .catch(next);
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findOneAndUpdate({ _id: req.params.cardId },
     { $pull: { likes: req.user._id } },
     { new: true }).populate(['owner', 'likes'])
-    .orFail(new DataBaseError(ERROR_CODES.IdError.message, ERROR_CODES.IdError.name))
+    .orFail(new CustomError(404, 'Данного id нет в базе'))
     .then((card) => res.status(200).send(card))
-    .catch((err) => {
-      if (err.name === ERROR_CODES.IdError.name) {
-        res.status(ERROR_CODES.IdError.code).send({ message: ERROR_CODES.IdError.message });
-        return;
-      }
-      if (err.name === ERROR_CODES.CastError.name) {
-        res.status(ERROR_CODES.CastError.code).send({ message: ERROR_CODES.CastError.message });
-        return;
-      }
-      res.status(500).send({ message: err.message });
-    });
+    .catch(next);
 };

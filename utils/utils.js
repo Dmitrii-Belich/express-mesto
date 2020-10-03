@@ -1,26 +1,8 @@
-class DataBaseError extends Error {
-  constructor(message, name) {
+class CustomError extends Error {
+  constructor(statusCode, message) {
     super(message);
-    this.name = name;
+    this.statusCode = statusCode;
   }
 }
 
-const ERROR_CODES = {
-  ValidationError: {
-    code: 400,
-    name: 'ValidationError',
-    message: 'Получены невалидные данные',
-  },
-  CastError: {
-    code: 404,
-    name: 'CastError',
-    message: 'Получен невалидный id',
-  },
-  IdError: {
-    code: 404,
-    name: 'NotValidId',
-    message: 'Данного id нет в базе',
-  },
-};
-
-module.exports = { DataBaseError, ERROR_CODES };
+module.exports = CustomError;
