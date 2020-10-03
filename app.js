@@ -69,8 +69,8 @@ app.use('/users', celebrate({
   }).unknown(true),
 }), auth, users);
 
-app.use((req, res, next) => {
-  next(new CustomError(404, 'Запрашиваемый ресурс не найден'));
+app.use(() => {
+  throw new CustomError(404, 'Запрашиваемый ресурс не найден');
 });
 
 app.use(errorLogger);

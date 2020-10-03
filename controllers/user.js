@@ -5,7 +5,7 @@ const User = require('../models/user');
 
 const CustomError = require('../utils/utils');
 
-const { JWT_SECRET } = process.env;
+const { JWT_SECRET = 'dev-key' } = process.env;
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
@@ -20,14 +20,31 @@ module.exports.getUser = (req, res, next) => {
     .catch(next);
 };
 
+module.exports.getUserById = (req, res, next) => {
+  User.findById(req.params.id)
+    .orFail(new CustomError(404, 'Данный пользователь не найден'))
+    .then((user) => res.status(200).send(user))
+    .catch(next);
+};
+
 module.exports.createUser = (req, res, next) => {
   const { password, email } = req.body;
   bcrypt.hash(password, 10).then((hashPassword) => {
     User.create({ password: hashPassword, email })
       .then((user) => res.status(200).send({ _id: user._id }))
-      .catch((err) => next(new CustomError(400, err.message)));
+      .catch((err) => {
+        if (err.code === 11000) {
+          next(new CustomError(409, err.message));
+        } else {
+          next(new CustomError(400, err.message));
+        }
+      });
   });
 };
+
+/* Сделал name, about и avatar с дефолтными значениями при регистрации
+чтобы была возможность связать API с фронтендом, так как там при регистрации
+указываются только email и password */
 
 module.exports.login = (req, res, next) => {
   const { password, email } = req.body;

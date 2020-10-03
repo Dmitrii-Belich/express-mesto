@@ -18,6 +18,8 @@ module.exports.deleteCard = (req, res, next) => {
           .then((deletedCard) => {
             res.status(200).send(deletedCard);
           });
+      } else {
+        throw new CustomError(403, 'У вас нет прав на это действие');
       }
     }).catch(next);
 };
